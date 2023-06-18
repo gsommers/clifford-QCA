@@ -2,7 +2,7 @@
 """
 Label the 36 iSWAP-core circuits on the square lattice.
 """
-module DualUnitary
+module CircuitLabels
 
 using Formatting
 using LaTeXStrings
