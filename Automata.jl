@@ -13,8 +13,6 @@ using Base.Threads
 using QuantumClifford
 using JLD2
 
-DATA_DIR_SC = "/scratch/gpfs/gsommers/huse/mpt/data/"
-
 #= Functions for writing and reading CQCA =#
 export make_automaton, make_automata, read_automata
 
@@ -30,7 +28,7 @@ Parameters
 Returns
   - `automata`: (updated) dictionary of CQCA
 """
-function read_automata(dimensions; dir = DATA_DIR_SC * "trans/automata/", automata::Dict=Dict(), check::Bool = true, n_qub::Int=2)
+function read_automata(dimensions; dir = "demo/", automata::Dict=Dict(), check::Bool = true, n_qub::Int=2)
     R, x= LaurentPolynomialRing(GF(2), "x")
     for dims in dimensions
         automata[dims]=matrix_to_automaton.(load(dir * "$(dims.time)x$(dims.space).jld2", "automata"))
@@ -45,16 +43,16 @@ function read_automata(dimensions; dir = DATA_DIR_SC * "trans/automata/", automa
 end
 
 """
-Express unit cells of Clifford gates as CQCA in matrix form. Save to file.
+Express unit cells of Clifford gates as CQCA in matrix form. Optionally save to file.
 *Note: only implemented for qubits and two-qubit gates, but could be generalized beyond this.*
 Parameters
   - `dims`: NamedTuple (time = T, space = a) specifying the dimensions of the unit cell
   - `cliffords`: array of T x a/n_qub matrices of Clifford gates
   - `dir::String` (kwarg): directory to save to
   - `automata_dict::Dict` (kwarg): dictionary that will be updated and saved to file (default empty)
-  - `check::Bool`: whether to check that automaton converts correctly, and is a valid automaton
-  - `n_qub::Int`: number of qubits involved in each gate (determines the lightcone velocity) (currently only works for n_qub=2)
-
+  - `check::Bool` (kwarg): whether to check that automaton converts correctly, and is a valid automaton
+  - `n_qub::Int` (kwarg): number of qubits involved in each gate (determines the lightcone velocity) (currently only works for n_qub=2)
+  - `save::Bool` (kwarg): whether to save to file (default true)
 Returns
   - `automata`: array of CQCA as elements of ``M_{2a}[F_2[u,u^{-1}]]``
 """
@@ -67,8 +65,10 @@ function make_automata(dims, cliffords; automata_dict::Dict=Dict("automata"=>[])
     end
 
     # now put into form for saving
-    automata_dict["automata"] = automaton_to_matrix.(automata, 1+(dims.time-1)÷dims.space*(n_qub-1); check=check)
-    save_data(automata_dict, dir * "$(dims.time)x$(dims.space)"; print=true)
+    if save
+        automata_dict["automata"] = automaton_to_matrix.(automata, 1+(dims.time-1)÷dims.space*(n_qub-1); check=check)
+        save_data(automata_dict, dir * "$(dims.time)x$(dims.space)"; print=true)
+    end
     automata
 end
 
@@ -326,7 +326,7 @@ function get_periods(automaton, num_cells; max_t::Int=1000, start_t::Int=1, time
 end
 
 """
-Get the recurrence times for automata on given length systems with PBCs, with unit cell a=dims.space. Return as dictionary. Save to file.
+Get the recurrence times for automata on given length systems with PBCs, with unit cell a=dims.space. Return as dictionary. Optionally save to file.
 Parameters:
   - `automata`: array of CQCA all with the same unit cell dimension a, i.e. elements of ``M_{2a}[F_q[u,u^{-1}]]``
   - `lengths`: system sizes (number of qudits)
@@ -336,11 +336,12 @@ Parameters:
   - `start_t::Int` (kwarg): time to start looking for recurrences (default 1)
   - `periods::Dict` (kwarg): dictionary of recurrence times, indexed by automaton index 
   - `dir::String` (kwarg): directory to save data to
+  - `save::Bool` (kwarg): whether to save to file (default true)
 Returns
   - `periods`: updated dictionary of recurrence times
 """
 function get_automaton_periods(automata, lengths, dims::NamedTuple, idxs; periods::Dict=Dict(),
-        dir::String = "periods/", max_t::Int = 1000, start_t::Int = 1)
+        dir::String = "periods/", max_t::Int = 1000, start_t::Int = 1, save::Bool = true)
     period_arr = fill(max_t + 1, length(lengths), length(idxs))
     @threads for idx_i=1:length(idxs)
     	idx = idxs[idx_i]
@@ -360,7 +361,7 @@ function get_automaton_periods(automata, lengths, dims::NamedTuple, idxs; period
             periods[idx][L]=period_arr[length_i,idx_i]
         end
     end
-    save_data(Dict("periods"=>periods, "tmax"=>max_t), dir * "$(dims.time)x$(dims.space)", print=true)
+    save && save_data(Dict("periods"=>periods, "tmax"=>max_t), dir * "$(dims.time)x$(dims.space)", print=true)
     periods
 end
 
