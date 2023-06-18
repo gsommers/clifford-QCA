@@ -12,7 +12,6 @@ using FieldConversions
 using Base.Threads
 using QuantumClifford
 using JLD2
-using CodingExtensions
 
 DATA_DIR_SC = "/scratch/gpfs/gsommers/huse/mpt/data/"
 
@@ -57,7 +56,7 @@ Parameters
   - `n_qub::Int`: number of qubits involved in each gate (determines the lightcone velocity) (currently only works for n_qub=2)
 
 Returns
-  - `automata`: array of CQCA as elements of M_2a[F_2[u,u^-1]]
+  - `automata`: array of CQCA as elements of ``M_{2a}[F_2[u,u^{-1}]]``
 """
 function make_automata(dims, cliffords; automata_dict::Dict=Dict("automata"=>[]), n_qub::Int=2, 
         check::Bool=true, dir::String="trans/automata/")
@@ -82,7 +81,7 @@ Parameters
   - `convert::Bool` (kwarg): whether to convert automaton to MatSpaceElem (rather than Matrix)
   - `check::Bool` (kwarg): whether to check that automaton preserves symplectic form
 Returns
-  - `automaton`: matrix with entries in F_2[u,u^-1], or MatSpaceElem, which encodes action of Clifford gates within one unit cell. *Columns are ordered as images of X_1,X_2,...,X_a, Z_1, Z_2,...,Z_a, contrary to convention in paper.*
+  - `automaton`: matrix with entries in ``F_2[u,u^{-1}]``, or MatSpaceElem, which encodes action of Clifford gates within one unit cell. *Columns are ordered as images of* ``X_1,X_2,...,X_a, Z_1, Z_2,...,Z_a``, *contrary to convention in paper.*
 """
 function make_automaton(cliffords; convert::Bool=false, check::Bool = true)
 
@@ -139,10 +138,23 @@ function apply_gate(cliff,t)
 end
 
 #= Functions for manipulating CQCA (reflect, shift, check valid) =#
-export canonical_automaton, shift_automaton!, reflect_automaton, get_shift_mat, check_symplectic
+export canonical_automaton, shift_automaton!, reflect_automaton, get_shift_mat, check_symplectic, make_symplectic
 
 """
-Check that automaton preserves symplectic inner product: M' Lambda M = Lambda where Lambda is the 2ax2a symplectic matrix and M' = overline{M^T}
+Returns the symplectic 2n x 2n matrix ``\\Lambda`` over the field `R`
+"""
+function make_symplectic(n::Int, R)
+    S = MatrixSpace(R, 2*n, 2*n)
+    mat = zero(S)
+    for i=1:n
+        mat[i, n+i] = R(1)
+	mat[n+i, i] = R(1)
+    end
+    mat
+end
+
+"""
+Check that automaton preserves symplectic inner product: ``M' \\Lambda M = \\Lambda`` where ``\\Lambda`` is the ``2a \times 2a`` symplectic matrix and ``M' = \\overline{M^T}``
 *Only works for qubits, because it calls automaton_to_matrix.*
 """
 function check_symplectic(automaton, symplectic_2d, velocity::Int)
@@ -151,8 +163,8 @@ function check_symplectic(automaton, symplectic_2d, velocity::Int)
 end
 
 """
-Permute columns of CQCA to bring into "canonical form":
-image of X1, Z1, X2, Z2,...,Xa, Za.
+Permute columns of CQCA to bring into "canonical form" used in paper:
+image of ``X_1, Z_1, X_2, Z_2,...,X_a, Z_a.``
 """
 function canonical_automaton(automaton)
     space_dim = size(automaton,2)÷2
@@ -164,7 +176,7 @@ end
 Transform the automaton so that the unit cell which used to be from qudits 1 to a is now from qudits d+1 to a+d+1. 
 
 Parameters
-  - `automaton`: element of M_2a[F_q[u,u^-1]], representing the action of a CQCA on unit cell a, with columns ordered X_1,...,X_a, Z_1,...,Z_a
+  - `automaton`: element of ``M_2a[F_q[u,u^{-1}]]``, representing the action of a CQCA on unit cell a, with columns ordered ``X_1,...,X_a, Z_1,...,Z_a``
   - `d::Int`: number of sites to shift unit cell by
 
 Returns
@@ -190,7 +202,7 @@ Parameters
   - `d::Int`: number of sites (<a) to shift by
   - `q::Int` (kwarg): qudit dimension (default 2)
 Returns
-  - `shift_mat`: MatSpaceElem M_shift, with columns ordered X1, X2,...,Xa, Z1,Z2,...,Za.
+  - `shift_mat`: MatSpaceElem M_shift, with columns ordered ``X_1, X_2,...,X_a, Z_1,Z_2,...,Z_a.``
 """
 function get_shift_mat(a::Int, d::Int; q::Int = 2)
     R,x = LaurentPolynomialRing(GF(q),"x");
@@ -213,7 +225,7 @@ end
 Reflect the automaton about the center of the unit cell. 
 
 Parameters
-  - `automaton`: matrix representation of the CQCA, with columns ordered X_1,...,X_a, Z_1,...,Z_a
+  - `automaton`: matrix representation of the CQCA, with columns ordered ``X_1,...,X_a, Z_1,...,Z_a``
   - `velocity::Int`: lightcone velocity, in units of a
 
 Returns reflected automaton.
@@ -232,9 +244,9 @@ export get_periods, get_automaton_periods, has_recurrence
 Check whether the matrix U is equal to identity up to a shift on a system of m unit cells with PBCs
 
 Parameters:
-  - `U`: element of M_2a[F_q[u,u^-1]]
+  - `U`: element of ``M_{2a}[F_q[u,u^{-1}]]``
   - `m::Int`: number of unit cells 
-Returns: true or false whether U = x^d I mod (x^m+1)
+Returns: true or false whether ``U = x^d I mod (x^m+1)``
 """
 function has_recurrence(U, m::Int)
     R, x= LaurentPolynomialRing(base_ring(U[1,1]), "x")
@@ -245,9 +257,9 @@ end
 """
 Check whether the matrix U is equal to identity up to a shift in the ring RR
 Parameters:
-  - `U`: element of M_2a[F_q[u,u^-1]]
+  - `U`: element of ``M_{2a}[F_q[u,u^{-1}]]``
   - `RR::Nemo.Ring`
-Returns: true or false whether U = x^d I (in ring RR)
+Returns: true or false whether``U = x^d I`` (in ring RR)
 """
 function has_recurrence(U,RR::Nemo.Ring)
     inv_first = 1
@@ -263,13 +275,13 @@ end
 """
 Get the period for the unitary represented by a given automaton to multiply to identity up to shifts with PBCs on systems of given lengths. 
 Parameters:
-  - `automaton`: element of M_2a[F_q[u,u^-1]]
+  - `automaton`: element of ``M_{2a}[F_q[u,u^{-1}]]``
   - `num_cells`: system sizes (number of unit cells)
   - `max_t::Int` (kwarg): cut off to stop trying to find recurrence (default 1000)
   - `start_t::Int` (kwarg): time to start looking for recurrences (default 1)
   - `times` (kwarg): array of periods found so far (default empty). 
 Returns
-  - `times`: updated array of recurrence times. ith entry is max_t+1 if no recurrence is found for the ith system size
+  - `times`: updated array of recurrence times. ith entry is `max_t`+1 if no recurrence is found for the ith system size
 """
 function get_periods(automaton, num_cells; max_t::Int=1000, start_t::Int=1, times = [])
     R, x= LaurentPolynomialRing(base_ring(automaton[1,1]), "x")
@@ -316,7 +328,7 @@ end
 """
 Get the recurrence times for automata on given length systems with PBCs, with unit cell a=dims.space. Return as dictionary. Save to file.
 Parameters:
-  - `automata`: array of CQCA all with the same unit cell dimension a, i.e. elements of M_2a[F_q[u,u^-1]]
+  - `automata`: array of CQCA all with the same unit cell dimension a, i.e. elements of ``M_{2a}[F_q[u,u^{-1}]]``
   - `lengths`: system sizes (number of qudits)
   - `dims::NamedTuple`: dimensions T, a of unit cell
   - `idxs::Array`: which of the automata to find recurrences for
@@ -366,7 +378,7 @@ end
 Get the trace of M^t, where M has characteristic polynomial char_poly, up to t=tf, using recursion relation for trace inferred from characteristic polynomial.
 
 Parameters:
-  - `automaton`: 2a x 2a matrix over F_q[u,u^-1]
+  - `automaton`: 2a x 2a matrix over ``F_q[u,u^{-1}]``
   - `char_poly`: characteristic polynomial of the automaton
   - `tf::Int` (kwarg): time up to which to compute trace (default 1000)    
 Returns:
@@ -385,7 +397,7 @@ end
 Get the trace of M^t, for each M in the array automata, up to t=tf, using recursion relation for trace inferred from characteristic polynomial.
 
 Parameters:
-  - `automata`: array of 2a x 2a matrix over F_q[u,u^-1]
+  - `automata`: array of 2a x 2a matrix over ``F_q[u,u^{-1}]``
   - `tf::Int` (kwarg): time up to which to compute trace (default 1000)    
 Returns:
   - `q::Int` (kwarg): dimension of qudit
