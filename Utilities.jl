@@ -5,9 +5,7 @@ General utility functions for data analysis and manipulation
 """
 module Utilities
 
-using Statistics
 using JLD2
-using FileIO
 using LsqFit
 
 export save_data, fit_linear, fit_function, get_binaries, get_base

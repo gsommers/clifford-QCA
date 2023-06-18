@@ -56,7 +56,7 @@ Parameters
 Returns
   - `automata`: array of CQCA as elements of ``M_{2a}[F_2[u,u^{-1}]]``
 """
-function make_automata(dims, cliffords; automata_dict::Dict=Dict("automata"=>[]), n_qub::Int=2, 
+function make_automata(dims, cliffords; automata_dict::Dict=Dict("automata"=>[]), n_qub::Int=2, save::Bool = true,
         check::Bool=true, dir::String="trans/automata/")
     n_qub==2 ? nothing : throw(ArgumentError("make_automata is only implemented for 2-qubit gates, you tried $(n_qub)-site gates"))
     automata = Array{Matrix}(undef, length(cliffords))
