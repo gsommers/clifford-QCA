@@ -12,7 +12,26 @@ using Utilities
 using LaTeXStrings
 using Formatting
 
-export plot_suptitle, plot_layout, plot_fit_linear
+export get_legend_key, plot_suptitle, plot_layout, plot_fit_linear
+
+"""
+Format a label.
+Typical use case is for labeling system sizes, but can be used when the label
+L is a noninteger, or even a string
+"""
+function get_legend_key(L; lab = "L")
+    if !(typeof(L)<:Number)
+        return L
+    end
+    if L%1==0
+        L = Int(L)
+    end
+    if typeof(L)<:Int
+       return LaTeXString(format(L"{}={:d}",lab,L));
+    else
+       return LaTeXString(format(L"{}=", lab)) * "$(round(L,digits=3))"
+    end
+end
 
 """
 Add a title to the plot plt, which possibly consists of many panels. If a nonzero value of num_plots is passed in, automatically determine the plot size to use, based on how many subplots are in plt. Returns the plot p
