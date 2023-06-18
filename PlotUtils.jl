@@ -4,6 +4,7 @@
 Utility functions for making and labeling plots
 """
 module PlotUtils
+
 using Statistics
 using Plots
 using Plots.PlotMeasures
@@ -11,21 +12,7 @@ using Utilities
 using LaTeXStrings
 using Formatting
 
-export plot_suptitle, plot_layout, plot_fit_linear, get_legend_key
-
-function get_legend_key(L; lab = "L")
-    if !(typeof(L)<:Number)
-        return L
-    end
-    if L%1==0
-        L = Int(L)
-    end
-    if typeof(L)<:Int
-       return LaTeXString(format(L"{}={:d}",lab,L));
-    else
-       return LaTeXString(format(L"{}=", lab)) * "$(round(L,digits=3))"
-    end
-end
+export plot_suptitle, plot_layout, plot_fit_linear
 
 """
 Add a title to the plot plt, which possibly consists of many panels. If a nonzero value of num_plots is passed in, automatically determine the plot size to use, based on how many subplots are in plt. Returns the plot p
@@ -38,6 +25,13 @@ function plot_suptitle(plt, title; size=(900,750),num_plots::Int=0, fontsize=12,
      p = Plots.plot(plt_title, plt, layout=Plots.grid(2,1,heights=[0.1*600/size[2],1-0.1*600/size[2]]), size = size)
  end
 
+"""
+Force `all_plots` into a grid layout with `ncols` columns, if `force_grid` is true.
+
+Returns
+  - `p`: plot with all_plots as panels
+  - `use_size`: size of plot
+"""
 function plot_layout(all_plots, ncols; force_grid::Bool=true)
     if !force_grid || ncols==1 || ncols==length(all_plots) # don't make a grid
         p = Plots.plot(all_plots...)
@@ -69,7 +63,7 @@ Parameters
   - `p1`, `p2`: plots to plot raw data and residuals on, respectively. Modified in place
   - `xdata`, `ydata`: x and y data points, respectively
   - `yerror`: error bars on the y data
-  - `f` (kwarg): functions to apply to xdata and ydata before performing fit. Ex: To do a power law fit, take f=[log, log].
+  - `f` (kwarg): functions to apply to xdata and ydata before performing linear fit. Ex: To do a power law fit, take f=[log, log].
   - `xmin` (kwarg): lower cutoff for data points to include in fit
   - `cond` (kwarg): if not nothing, condition on the xdata to include in fit. Otherwise, cond will be set to x->x>=xmin
   - `use_sigma::Bool` (kwarg): whether to include yerror in weighting the least square regression (default true)
@@ -132,4 +126,5 @@ function plot_fit_linear(p1, p2, xdata, ydata, yerror; f=[identity,identity], xm
     end
     fits, errs
 end
+
 end # module

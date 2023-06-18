@@ -16,7 +16,18 @@ lin(x,params)=(x.*params[1]).+ params[2]
 
 lin_origin(x, params)=lin(x,[params,0])
 
-# returns: best fit params, stderr, residuals
+"""
+Fit ydata to the function `f` of xdata. 
+Parameters
+  - `f`: fitting function
+  - `xdata`, `ydata`: x and y data points, respectively
+  - `sigma`: uncertainties on y data points
+  - `p0`: initial guess for parameters, i.e. y = f(xdata, p0)
+  - `use_sigma::Bool` (kwarg): whether to include yerror in weighting the least square regression (default true)
+  - `thresh` (kwarg): threshold for uncertainties: If `use_sigma` is `true`, but some uncertainties fall below `thresh`, reset them to `thresh` or they'll screw up the weights on the fits.
+  - `print::Bool` (kwarg): whether to print warning about uncertainties below threshold.
+Returns: best fit params, stderr, residuals
+"""
 function fit_function(f, xdata, ydata, sigma, p0; use_sigma::Bool=true, thresh=1e-6, print::Bool=false)
     if sigma==zeros(length(sigma)) || !use_sigma
         fitted = curve_fit(f, xdata, ydata, p0)
@@ -37,7 +48,17 @@ function fit_function(f, xdata, ydata, sigma, p0; use_sigma::Bool=true, thresh=1
     fitted.param, stderror(fitted), resid
 end
 
-# returns: slope, intercept, stderr, residuals
+"""
+Fit ydata to the linear function.
+Parameters
+  - `xdata`, `ydata`: x and y data points, respectively
+  - `sigma`: uncertainties on y data points
+  - `p0` (kwarg): initial guess for slope and intercept, i.e. y = p0[1] * xdata + p0[2]
+  - `use_sigma::Bool` (kwarg): whether to include yerror in weighting the least square regression (default true)
+  - `thresh` (kwarg): threshold for uncertainties: If `use_sigma` is `true`, but some uncertainties fall below `thresh`, reset them to `thresh` or they'll screw up the weights on the fits.
+  - `print::Bool` (kwarg): whether to print warning about uncertainties below threshold.
+Returns: best fit params (slope and intecept), stderr, residuals
+"""
 function fit_linear(xdata, ydata, sigma; p0 = [1.,0.],use_sigma::Bool=true,
 	 thresh=1e-6, print::Bool=false)
     fit_function(lin, xdata, ydata, sigma, p0; use_sigma=use_sigma, thresh=thresh, print=print)
@@ -48,19 +69,25 @@ function fit_proportional(xdata, ydata, sigma; p0 = [1.],use_sigma::Bool=true)
     fit_function(lin_origin, xdata, ydata, sigma, p0; use_sigma=use_sigma)
 end
 
-# save data to .jld2 file
+"""
+Save data to .jld2 file with the name `name`. Optionally print message.
+"""
 function save_data(data, name;print::Bool=false)
     filename = "$(name).jld2"
     print && println("Saving to $(filename)")
     save(filename, data)
 end
 
-# convert integer into a boolean array
+"""
+Convert integer `num` into a boolean array with `places` number of bits.
+"""
 function get_binaries(num, places)
     Bool.(get_base(num, places, 2))
 end
 
-# convert integer into an array of digits in a given base
+"""
+Convert integer into an array of digits in a given base
+""" 
 function get_base(num, places, b)
     num < b^places ? nothing : throw(ArgumentError("Not enough places: $(num)>=b^$(places)"))
     bins = zeros(Int, places)
