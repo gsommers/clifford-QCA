@@ -20,5 +20,9 @@ Then you can access the functions in these modules through the command `using <m
 
 Required packages
 -----------------
-  - `IJulia` (to run demo notebook)
-  
+  - `QuantumClifford` (for stabilizer formalism)
+  - `Nemo` (for finite fields and Laurent polynomials)
+  - `JLD2` (for saving and reading data)
+  - `LsqFit` (for fits to fractal dimension)
+  - For plotting: `Plots`, `LaTeXStrings`, `Formatting`, `PyPlot`
+  - To run demo notebook: `IJulia`, `Revise`, `ProgressMeter`
